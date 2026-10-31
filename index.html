@@ -69,16 +69,24 @@
 <!-- Startup diagnostics: plain ES5 so it still runs if app.js can't. Shows errors on the iPod screen. -->
 <script>
 (function () {
-  var shown = false;
+  var shown = false, last = '', repeats = 0, lastEl = null;
   function report(msg) {
     var d = document.getElementById('diag');
     if (!d) return;
     d.hidden = false;
-    d.innerHTML += '<div>' + String(msg).replace(/</g, '&lt;') + '</div>';
+    msg = String(msg);
+    if (msg === last && lastEl) { lastEl.textContent = msg + ' (x' + (++repeats + 1) + ')'; return; }
+    last = msg; repeats = 0;
+    lastEl = document.createElement('div');
+    lastEl.textContent = msg;
+    d.appendChild(lastEl);
     if (!shown) {
       shown = true;
-      d.innerHTML += '<div class="ua">' + navigator.userAgent.replace(/</g, '&lt;') +
-        '<br>secure: ' + window.isSecureContext + ' &middot; crypto: ' + !!(window.crypto && window.crypto.subtle) + '</div>';
+      var ua = document.createElement('div');
+      ua.className = 'ua';
+      ua.textContent = navigator.userAgent + ' | secure: ' + window.isSecureContext +
+        ' | crypto: ' + !!(window.crypto && window.crypto.subtle);
+      d.appendChild(ua);
     }
   }
   window.onerror = function (msg, src, line) { report('Error: ' + msg + ' (' + (src || '').split('/').pop() + ':' + line + ')'); };

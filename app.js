@@ -67,11 +67,18 @@
     return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
+  // Form-encodes by hand: older Chrome sends an empty body for fetch(..., { body: URLSearchParams }).
+  function formEncode(params) {
+    return Object.keys(params).map(function (k) {
+      return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    }).join('&');
+  }
+
   async function tokenRequest(params) {
     var r = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(params)
+      body: formEncode(params)
     });
     var j = await r.json().catch(function () { return {}; });
     if (!r.ok) {
@@ -99,7 +106,7 @@
       store.set('verifier', verifier);
       store.set('state', state);
       var digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-      var q = new URLSearchParams({
+      var q = formEncode({
         response_type: 'code',
         client_id: this.clientId(),
         scope: SCOPES,
@@ -108,7 +115,7 @@
         code_challenge: base64url(digest),
         state: state
       });
-      location.href = 'https://accounts.spotify.com/authorize?' + q.toString();
+      location.href = 'https://accounts.spotify.com/authorize?' + q;
     },
     // Runs when Spotify redirects back with a code. Returns null on a normal page load, or
     // { handoff: refreshToken } when the login was made for another device (tokens not kept here).
@@ -158,8 +165,14 @@
       if (!t || !t.refresh) { var e = new Error('Not logged in'); e.auth = true; return Promise.reject(e); }
       if (!this._pending) {
         this._pending = tokenRequest({ grant_type: 'refresh_token', refresh_token: t.refresh, client_id: this.clientId() })
-          .then(function (r) { self.save(r); return self.tokens().access; })
-          .finally(function () { self._pending = null; });
+          .then(function (r) {
+            self._pending = null;
+            self.save(r);
+            return self.tokens().access;
+          }, function (e) {
+            self._pending = null;
+            throw e;
+          });
       }
       return this._pending;
     },
@@ -564,7 +577,7 @@
       self.done = true;
       if (self.onError) self.rows = self.onError(e);
       else self.error = friendly(e);
-    }).finally(function () {
+    }).then(function () { // no Promise.finally before Chrome 63
       self.loading = false;
       self.render();
     });
@@ -996,8 +1009,13 @@
       var AC = window.AudioContext || window.webkitAudioContext;
       if (AC) clicker.ctx = new AC();
     } catch (err) {}
-    if (e && e.pointerType === 'touch' && document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen().catch(function () {});
+    var root = document.documentElement;
+    var fs = root.requestFullscreen || root.webkitRequestFullscreen;
+    if (e && e.pointerType === 'touch' && fs) {
+      try {
+        var p = fs.call(root); // a Promise only from Chrome 71
+        if (p && p.catch) p.catch(function () {});
+      } catch (err) {}
     }
     requestWakeLock();
     if (sdk.player && sdk.player.activateElement) sdk.player.activateElement();
