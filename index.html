@@ -19,6 +19,7 @@
     </div>
     <div id="views"></div>
     <div id="toast"></div>
+    <div id="diag" hidden></div>
 
     <!-- Setup / login overlay (regular inputs; the wheel can't type) -->
     <div id="setup" hidden>
@@ -40,6 +41,27 @@
     <div id="center"></div>
   </div>
 </div>
+<!-- Startup diagnostics: plain ES5 so it still runs if app.js can't. Shows errors on the iPod screen. -->
+<script>
+(function () {
+  var shown = false;
+  function report(msg) {
+    var d = document.getElementById('diag');
+    if (!d) return;
+    d.hidden = false;
+    d.innerHTML += '<div>' + String(msg).replace(/</g, '&lt;') + '</div>';
+    if (!shown) {
+      shown = true;
+      d.innerHTML += '<div class="ua">' + navigator.userAgent.replace(/</g, '&lt;') +
+        '<br>secure: ' + window.isSecureContext + ' &middot; crypto: ' + !!(window.crypto && window.crypto.subtle) + '</div>';
+    }
+  }
+  window.onerror = function (msg, src, line) { report('Error: ' + msg + ' (' + (src || '').split('/').pop() + ':' + line + ')'); };
+  window.addEventListener('unhandledrejection', function (e) { report('Promise: ' + (e.reason && e.reason.message || e.reason)); });
+  window.__ipodReport = report;
+  setTimeout(function () { if (!window.__ipodBooted) report('App did not finish starting.'); }, 6000);
+})();
+</script>
 <script src="app.js"></script>
 </body>
 </html>

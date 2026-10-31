@@ -706,6 +706,7 @@
       } else old.remove();
     }
     $('sb-title').textContent = screen.title;
+    window.__ipodBooted = true;
     if (screen.onShow) screen.onShow();
   }
   function push(screen) { ui.stack.push(screen); show(screen, 1); }
@@ -1103,6 +1104,7 @@
   /* ===================== Setup & boot ===================== */
 
   function showSetup(msg) {
+    window.__ipodBooted = true;
     $('setup').hidden = false;
     $('client-id').value = Auth.clientId();
     if (CLIENT_ID) $('client-id').parentNode.querySelector('label[for=client-id]').hidden = $('client-id').hidden = true;
@@ -1169,5 +1171,5 @@
     showSetup();
   }
 
-  boot();
+  boot().catch(function (e) { if (window.__ipodReport) window.__ipodReport('Startup failed: ' + (e && e.message || e)); });
 })();
