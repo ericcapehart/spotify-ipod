@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a1a">
+<title>iPod Classic</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-silver">
+<div id="ipod">
+  <div id="screen">
+    <div id="statusbar">
+      <span id="sb-play"></span>
+      <span id="sb-title">iPod</span>
+      <span id="sb-battery"><i></i></span>
+    </div>
+    <div id="views"></div>
+    <div id="toast"></div>
+
+    <!-- Setup / login overlay (regular inputs; the wheel can't type) -->
+    <div id="setup" hidden>
+      <h1>iPod</h1>
+      <p class="muted">Sign in with Spotify to load your library.</p>
+      <label for="client-id">Spotify Client ID</label>
+      <input id="client-id" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="32-character client ID">
+      <button id="btn-login" type="button">Log in with Spotify</button>
+      <button id="btn-demo" type="button" class="secondary">Try demo library</button>
+      <p class="muted small">Redirect URI to register:<br><code id="redirect-uri"></code></p>
+    </div>
+  </div>
+
+  <div id="wheel">
+    <span class="wl wl-menu">MENU</span>
+    <span class="wl wl-prev">&#10074;&#9664;&#9664;</span>
+    <span class="wl wl-next">&#9654;&#9654;&#10074;</span>
+    <span class="wl wl-play">&#9654;&#xFE0E;&#10074;&#10074;</span>
+    <div id="center"></div>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
