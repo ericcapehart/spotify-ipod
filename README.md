@@ -44,6 +44,20 @@ Optional: put your Client ID in `CLIENT_ID` at the top of `app.js` so you don't 
 2. Chrome menu › **Add to Home screen**. Launching from the home-screen icon runs it full screen.
 3. Open the Spotify app once so it shows up as a device. Then choose music on the iPod.
 
+### If Spotify's login page won't load on the phone
+
+Spotify's login page doesn't support old versions of Chrome. Sign in on another device and hand the login over:
+
+1. On a computer (or any phone with a current browser), open the same address, enter the Client ID,
+   and tap **Log in for another device**.
+2. After you sign in to Spotify, that device shows a QR code. On the old phone, tap **Scan login code**
+   and point the camera at it. If the camera doesn't work, use **Copy link** on the computer, send the
+   link to the phone yourself, and open it in Chrome.
+
+The code works like a password for your Spotify account, so keep it private. Don't open the link on the
+computer: Spotify issues a new refresh token each time one is used, and the phone needs to be the only
+device using it.
+
 Without an account, **Try demo library** shows the full UI with a made-up library and a simulated player.
 
 ## Controls

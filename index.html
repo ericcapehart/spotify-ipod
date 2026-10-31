@@ -28,6 +28,8 @@
       <label for="client-id">Spotify Client ID</label>
       <input id="client-id" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="32-character client ID">
       <button id="btn-login" type="button">Log in with Spotify</button>
+      <button id="btn-scan" type="button" class="secondary">Scan login code</button>
+      <button id="btn-login-other" type="button" class="secondary">Log in for another device</button>
       <button id="btn-demo" type="button" class="secondary">Try demo library</button>
       <p class="muted small">Redirect URI to register:<br><code id="redirect-uri"></code></p>
     </div>
@@ -41,6 +43,29 @@
     <div id="center"></div>
   </div>
 </div>
+<!-- Shown on the computer after "Log in for another device": hands the login to the phone. -->
+<div id="handoff" class="overlay" hidden>
+  <div class="panel">
+    <h2>Scan this with your iPod</h2>
+    <div id="qr"></div>
+    <p>On the phone, tap <b>Scan login code</b> and point the camera here.</p>
+    <p class="muted">No camera? Send yourself this link and open it in Chrome on the phone:</p>
+    <input id="handoff-link" type="text" readonly>
+    <button id="btn-copy" type="button">Copy link</button>
+    <p class="muted small">This code signs in to your Spotify account. Keep it private, and don't open it on this computer.</p>
+    <button id="btn-handoff-done" type="button" class="secondary">Done</button>
+  </div>
+</div>
+
+<!-- Camera view on the phone for reading that code. -->
+<div id="scanner" class="overlay" hidden>
+  <div class="panel">
+    <video id="scan-video" playsinline muted autoplay></video>
+    <p id="scan-msg">Point the camera at the code on your other device.</p>
+    <button id="btn-scan-cancel" type="button" class="secondary">Cancel</button>
+  </div>
+</div>
+
 <!-- Startup diagnostics: plain ES5 so it still runs if app.js can't. Shows errors on the iPod screen. -->
 <script>
 (function () {

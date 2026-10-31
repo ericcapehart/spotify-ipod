@@ -110,10 +110,11 @@
       });
       location.href = 'https://accounts.spotify.com/authorize?' + q.toString();
     },
-    // Returns true when this page load is Spotify redirecting back with a code.
+    // Runs when Spotify redirects back with a code. Returns null on a normal page load, or
+    // { handoff: refreshToken } when the login was made for another device (tokens not kept here).
     handleRedirect: async function () {
       var q = new URLSearchParams(location.search);
-      if (!q.has('code') && !q.has('error')) return false;
+      if (!q.has('code') && !q.has('error')) return null;
       history.replaceState(null, '', REDIRECT_URI);
       if (q.get('error')) throw userError('Spotify login was cancelled (' + q.get('error') + ').');
       if (q.get('state') !== store.get('state')) throw userError('Login expired. Please try again.');
@@ -124,9 +125,26 @@
         client_id: this.clientId(),
         code_verifier: store.get('verifier')
       });
-      this.save(t);
       store.del('verifier');
       store.del('state');
+      if (store.get('handoff') === '1') {
+        // Spotify rotates refresh tokens, so only the receiving device may keep this one.
+        store.del('handoff');
+        return { handoff: t.refresh_token };
+      }
+      this.save(t);
+      return {};
+    },
+    // Accepts "<clientId>.<refreshToken>" from a hand-off link or QR code.
+    importHandoff: function (payload) {
+      var s = decodeURIComponent(payload || '');
+      var dot = s.indexOf('.');
+      var id = s.slice(0, dot);
+      var refresh = s.slice(dot + 1);
+      if (dot < 0 || !/^[0-9a-f]{32}$/i.test(id) || !refresh) return false;
+      store.set('clientId', id);
+      store.set('tokens', JSON.stringify({ access: '', refresh: refresh, expires: 0 }));
+      store.del('demo');
       return true;
     },
     token: async function () {
@@ -1137,19 +1155,113 @@
     Player.refresh();
   }
 
+  /* ---------- Login hand-off: sign in on a computer, scan the code on the phone ---------- */
+
+  var HANDOFF = '#ipod=';
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = function () { reject(new Error('Could not load ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function showHandoff(refresh) {
+    var link = REDIRECT_URI + HANDOFF + Auth.clientId() + '.' + encodeURIComponent(refresh);
+    $('handoff').hidden = false;
+    $('handoff-link').value = link;
+    $('qr').textContent = 'Loading…';
+    loadScript('lib/qrcode.min.js').then(function () {
+      var qr = window.qrcode(0, 'L');
+      qr.addData(link);
+      qr.make();
+      $('qr').innerHTML = qr.createImgTag(6, 12);
+    }).catch(function (e) { $('qr').textContent = e.message; });
+  }
+
+  var scan = { stream: null, timer: 0 };
+  function stopScan() {
+    if (scan.stream) scan.stream.getTracks().forEach(function (t) { t.stop(); });
+    scan.stream = null;
+    clearTimeout(scan.timer);
+    $('scan-video').srcObject = null;
+    $('scanner').hidden = true;
+  }
+  async function startScan() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return toast('This browser can’t use the camera. Open the login link on this phone instead.');
+    }
+    $('scanner').hidden = false;
+    $('scan-msg').textContent = 'Starting camera…';
+    var video = $('scan-video');
+    try {
+      await loadScript('lib/jsQR.min.js');
+      scan.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      video.srcObject = scan.stream;
+      await video.play();
+    } catch (e) {
+      stopScan();
+      return toast('Camera unavailable (' + (e.name || e.message) + '). Open the login link on this phone instead.');
+    }
+    $('scan-msg').textContent = 'Point the camera at the code on your other device.';
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+    var look = function () {
+      if (!scan.stream) return;
+      if (video.videoWidth) {
+        var w = Math.min(480, video.videoWidth);
+        var h = Math.round(video.videoHeight * w / video.videoWidth);
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(video, 0, 0, w, h);
+        var code = window.jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
+        var at = code && code.data ? code.data.indexOf(HANDOFF) : -1;
+        if (at >= 0) {
+          stopScan();
+          if (Auth.importHandoff(code.data.slice(at + HANDOFF.length))) start(SpotifyBackend);
+          else toast('That isn’t a valid login code.');
+          return;
+        }
+      }
+      scan.timer = setTimeout(look, 250); // old phones: a few frames a second is plenty
+    };
+    look();
+  }
+
   function initSetup() {
     $('redirect-uri').textContent = REDIRECT_URI;
-    $('btn-login').addEventListener('click', function () {
+    var login = function (forOtherDevice) {
       var id = (CLIENT_ID || $('client-id').value).trim();
       if (!/^[0-9a-f]{32}$/i.test(id)) return toast('Enter the 32-character Client ID from your Spotify app.');
       if (!window.crypto || !crypto.subtle) return toast('This page must be opened over https:// to log in.');
       store.set('clientId', id);
       store.del('demo');
+      if (forOtherDevice) store.set('handoff', '1');
+      else store.del('handoff');
       Auth.login().catch(function (e) { toast(friendly(e)); });
-    });
+    };
+    $('btn-login').addEventListener('click', function () { login(false); });
+    $('btn-login-other').addEventListener('click', function () { login(true); });
+    $('btn-scan').addEventListener('click', startScan);
+    $('btn-scan-cancel').addEventListener('click', stopScan);
     $('btn-demo').addEventListener('click', function () {
       store.set('demo', '1');
       start(makeDemo());
+    });
+    $('btn-copy').addEventListener('click', function () {
+      var input = $('handoff-link');
+      var done = function () { $('btn-copy').textContent = 'Copied'; };
+      if (navigator.clipboard) navigator.clipboard.writeText(input.value).then(done, function () {});
+      else { input.select(); document.execCommand('copy'); done(); }
+    });
+    $('btn-handoff-done').addEventListener('click', function () {
+      $('handoff').hidden = true;
+      $('handoff-link').value = '';
+      $('qr').innerHTML = '';
+      $('btn-copy').textContent = 'Copy link';
     });
   }
 
@@ -1161,8 +1273,18 @@
     setInterval(function () { if (top() === nowPlaying) nowPlaying.update(); }, 500);
     setInterval(function () { if (backend && !document.hidden) Player.refresh(); }, 3000);
 
+    if (location.hash.indexOf(HANDOFF) === 0) {
+      var imported = Auth.importHandoff(location.hash.slice(HANDOFF.length));
+      history.replaceState(null, '', REDIRECT_URI);
+      if (imported) return start(SpotifyBackend);
+      return showSetup('That login link isn’t valid. Make a new one on your other device.');
+    }
     try {
-      await Auth.handleRedirect();
+      var redirect = await Auth.handleRedirect();
+      if (redirect && redirect.handoff) {
+        showSetup();
+        return showHandoff(redirect.handoff);
+      }
     } catch (e) {
       return showSetup(friendly(e));
     }

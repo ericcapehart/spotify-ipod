@@ -198,3 +198,29 @@ code { font-size: 2.8vmin; }
 #diag[hidden] { display: none; }
 #diag div { margin-bottom: 2%; word-break: break-word; }
 #diag .ua { color: #333; font-size: 2.8vmin; }
+
+/* Login hand-off (QR on the computer, camera on the phone) */
+.overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 30;
+  background: rgba(0,0,0,.75);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; overflow-y: auto;
+  -webkit-user-select: text; user-select: text; touch-action: auto;
+}
+.overlay[hidden] { display: none; }
+.overlay .panel {
+  background: #fff; border-radius: 14px; padding: 18px; width: 100%; max-width: 380px;
+  text-align: center; font-size: 15px; color: #111;
+}
+.overlay h2 { margin: 0 0 10px; font-size: 19px; }
+.overlay p { margin: 8px 0; }
+.overlay .muted { font-size: 13px; }
+.overlay .small { font-size: 12px; }
+.overlay input { width: 100%; font-size: 12px; padding: 8px; border: 1px solid #aaa; border-radius: 8px; }
+.overlay button {
+  display: block; width: 100%; margin-top: 10px; font-size: 15px; font-weight: bold;
+  padding: 11px; border: 0; border-radius: 22px; background: #1db954; color: #fff;
+}
+.overlay button.secondary { background: #dfe2e6; color: #222; }
+#qr img { width: 100%; max-width: 300px; height: auto; image-rendering: pixelated; }
+#scan-video { width: 100%; max-height: 60vh; background: #000; border-radius: 8px; }
