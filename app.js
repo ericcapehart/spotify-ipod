@@ -18,7 +18,10 @@
     'user-follow-read', 'user-read-playback-state', 'user-modify-playback-state',
     'user-read-currently-playing', 'streaming'
   ].join(' ');
-  var REDIRECT_URI = location.origin + location.pathname;
+  var REDIRECT_URI = location.href.split(/[?#]/)[0];
+  // Running inside the Android app (android/), which loads these files from file:///android_asset.
+  // Spotify can't redirect back to a file: page, so the app signs in only by scanning a login code.
+  var IN_APP = /IpodApp\//.test(navigator.userAgent);
   var ROWS = 8;          // visible menu rows
   var TICK_DEG = 15;     // degrees of wheel travel per click (24 per turn)
 
@@ -1031,6 +1034,8 @@
     if (s && s.onSelect) s.onSelect();
   }
   function menuButton() { click(); pop(); }
+  // The Android back button: acts like MENU and reports whether there was anywhere to go back to.
+  window.ipodBack = function () { return !$('setup').hidden || !backend ? false : (click(), pop()); };
   function playPause() {
     click();
     if (!backend) return;
@@ -1251,6 +1256,13 @@
 
   function initSetup() {
     $('redirect-uri').textContent = REDIRECT_URI;
+    if (IN_APP) {
+      ['client-id', 'btn-login', 'btn-login-other'].forEach(function (id) { $(id).hidden = true; });
+      $('setup').querySelector('label[for=client-id]').hidden = true;
+      $('redirect-uri').parentNode.hidden = true;
+      $('setup').querySelector('p.muted').textContent =
+        'On your computer, open ericcapehart.github.io/spotify-ipod and choose \u201cLog in for another device\u201d. Then scan the code here.';
+    }
     var login = function (forOtherDevice) {
       var id = (CLIENT_ID || $('client-id').value).trim();
       if (!/^[0-9a-f]{32}$/i.test(id)) return toast('Enter the 32-character Client ID from your Spotify app.');
