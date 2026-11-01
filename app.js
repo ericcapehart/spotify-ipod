@@ -1295,8 +1295,19 @@
     });
   }
 
+  // Physical display width of the Galaxy S5 (1080 px at 432 ppi), for laying out to the case.
+  var S5_DISPLAY_MM = 63.5;
+  function fitToCase() {
+    document.body.style.setProperty('--mm', (window.innerWidth / S5_DISPLAY_MM) + 'px');
+  }
+
   async function boot() {
     setTheme(store.get('theme') || 'silver');
+    if (IN_APP) {
+      document.body.classList.add('in-app');
+      fitToCase();
+      window.addEventListener('resize', fitToCase);
+    }
     initSetup();
     initInput();
     initBattery();

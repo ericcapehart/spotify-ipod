@@ -224,3 +224,34 @@ code { font-size: 2.8vmin; }
 .overlay button.secondary { background: #dfe2e6; color: #222; }
 #qr img { width: 100%; max-width: 300px; height: auto; image-rendering: pixelated; }
 #scan-video { width: 100%; max-height: 60vh; background: #000; border-radius: 8px; }
+
+/* ---------- Inside the Android app, fitted to the 3D-printed case ----------
+   Positions are millimetres on the Galaxy S5's display (63.5 x 112.9 mm active area), measured
+   from its top-left corner. app.js sets --mm to CSS pixels per millimetre. Keep these in step
+   with case/ipod_case.scad: the case openings are 1 mm smaller on each side than what's drawn here,
+   so the case edge always hides the border even if it sits slightly off. */
+body.in-app {
+  --lcd-w: 56;    --lcd-h: 42.5;  --lcd-top: 5;      /* case window: 54 x 40.5 at top 6 */
+  --wheel-d: 49;  --wheel-cy: 78.5;                  /* case opening: 47 */
+  background: #000;
+}
+body.in-app #ipod {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  max-width: none; margin: 0; padding: 0; border-radius: 0;
+  background: #000; /* hidden under the case; black keeps light from glowing through the plastic */
+}
+body.in-app #screen {
+  position: absolute;
+  width: calc(var(--mm) * var(--lcd-w));
+  height: calc(var(--mm) * var(--lcd-h));
+  left: calc(50% - var(--mm) * var(--lcd-w) / 2);
+  top: calc(var(--mm) * var(--lcd-top));
+  border-radius: calc(var(--mm) * 1);
+}
+body.in-app #wheel {
+  position: absolute; margin: 0; max-width: none; max-height: none;
+  width: calc(var(--mm) * var(--wheel-d));
+  height: calc(var(--mm) * var(--wheel-d));
+  left: calc(50% - var(--mm) * var(--wheel-d) / 2);
+  top: calc(var(--mm) * (var(--wheel-cy) - var(--wheel-d) / 2));
+}
