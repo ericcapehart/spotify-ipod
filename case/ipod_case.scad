@@ -37,7 +37,7 @@ wheel_cy = 78.5;    // wheel centre, from the top of the display
 /* [Openings] */
 sensor_w = 44;      // earpiece, front camera and sensors, across the top of the face
 sensor_h = 6;
-sensor_cy = 7.5;
+sensor_cy = 5.0;    // fit test: 7.5 cut off the top of the sensors
 home_w = 20;        // home button
 home_h = 8;
 home_cy = 135;

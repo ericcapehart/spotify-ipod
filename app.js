@@ -930,6 +930,9 @@
         { label: 'Theme', sub: function () { return document.body.classList.contains('theme-black') ? 'Black' : 'Silver'; }, action: function (scr) {
           setTheme(document.body.classList.contains('theme-black') ? 'silver' : 'black'); scr.render();
         } },
+        IN_APP && { label: 'Case', sub: function () { return document.body.classList.contains('no-case') ? 'Off' : 'On'; }, action: function (scr) {
+          setCase(document.body.classList.contains('no-case')); scr.render();
+        } },
         { label: 'Clicker', sub: function () { return clicker.on ? 'On' : 'Off'; }, action: function (scr) {
           clicker.on = !clicker.on; store.set('clicker', clicker.on ? '1' : '0'); scr.render();
         } },
@@ -940,7 +943,7 @@
           Player.state = null;
           showSetup();
         } }
-      ]
+      ].filter(Boolean)
     });
   }
 
@@ -982,6 +985,13 @@
     document.body.classList.toggle('theme-black', name === 'black');
     document.body.classList.toggle('theme-silver', name !== 'black');
     store.set('theme', name);
+  }
+
+  // Case on: black around the screen and wheel, so no light glows through the plastic.
+  // Off: the iPod body colour fills the rest of the phone.
+  function setCase(on) {
+    document.body.classList.toggle('no-case', !on);
+    store.set('case', on ? '1' : '0');
   }
 
   function initBattery() {
@@ -1305,6 +1315,7 @@
     setTheme(store.get('theme') || 'silver');
     if (IN_APP) {
       document.body.classList.add('in-app');
+      setCase(store.get('case') !== '0');
       fitToCase();
       window.addEventListener('resize', fitToCase);
     }

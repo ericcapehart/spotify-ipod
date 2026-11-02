@@ -70,7 +70,7 @@ Without an account, **Try demo library** shows the full UI with a made-up librar
 | ▶❚❚ / ◀◀ / ▶▶ | Play/pause, previous, next | Same |
 
 You can also tap a menu row directly. Settings has Play On (device picker), Shuffle, Repeat,
-Theme (Silver or Black), Clicker sound, and Log Out.
+Theme (Silver or Black), Case (in the Android app: On gives a black background for the 3D-printed case, Off fills the phone with the iPod body colour), Clicker sound, and Log Out.
 
 ## Library and Spotify's limits
 

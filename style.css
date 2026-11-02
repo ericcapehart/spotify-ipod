@@ -240,6 +240,9 @@ body.in-app #ipod {
   max-width: none; margin: 0; padding: 0; border-radius: 0;
   background: #000; /* hidden under the case; black keeps light from glowing through the plastic */
 }
+body.in-app.no-case, body.in-app.no-case #ipod {
+  background: linear-gradient(180deg, var(--body-top), var(--body-bot));
+}
 body.in-app #screen {
   position: absolute;
   width: calc(var(--mm) * var(--lcd-w));
